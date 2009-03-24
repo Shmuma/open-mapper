@@ -1,6 +1,7 @@
 (defpackage :shmuma.mapper.tiles
   (:use :common-lisp :shmuma.mapper.coords)
-  )
+  (:export :tiles
+           :tiles-for-region))
 
 (in-package :shmuma.mapper.tiles)
 
@@ -26,18 +27,3 @@
     (loop for ty from (cadr ll) to (cadr rr)
          append (loop for tx from (car ll) to (car rr)
                    collect (format-url (coords tiles) tx ty zoom)))))
-
-
-(defun test ()
-  (tiles-for-region (make-instance 'tiles :coords (make-instance 'yandex-coords))
-                    '(55.80744d0 37.56762d0)
-                    '(55.90744d0 37.66762d0)
-                    23))
-
-(defvar *t* (make-instance 'tiles :coords (make-instance 'yandex-coords)))
-
-(setf *u* (latlon2tiles (coords *t*) '(55.75698d0 37.62435d0) 8))
-(setf *d* (latlon2tiles (coords *t*) '(55.85698d0 37.72435d0) 8))
-
-(setf *uu* (latlon2units (coords *t*) '(55.75698d0 37.62435d0)))
-(setf *du* (latlon2units (coords *t*) '(55.875698d0 37.72435d0)))
