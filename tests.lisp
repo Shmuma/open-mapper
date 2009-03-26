@@ -3,6 +3,7 @@
   (:export :test-coords
            :test-tiles))
 
+(in-package :shmuma.mapper.tests)
 
 
 (defun show-error-message (err)

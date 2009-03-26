@@ -128,6 +128,6 @@
 
 
 (defmethod format-url ((coord yandex-coords) tx ty zoom)
-  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=~s&x=~d&y=~d&z=~d" 
-          (version coords) tx ty (- (max-zoom coord) zoom)))
+  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=~a&x=~d&y=~d&z=~d" 
+          (version coord) tx ty (- (max-zoom coord) zoom)))
 
