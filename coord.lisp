@@ -20,7 +20,11 @@
    (max-zoom
     :initarg :max-zoom
     :initform (error "You must provide max-zoom")
-    :reader max-zoom)))
+    :reader max-zoom)
+   (version
+    :initarg :version
+    :initform nil
+    :reader version)))
 
 
 (defclass yandex-coords (tiles-coords)
@@ -37,7 +41,9 @@
     :initform 6378137.0d0
     :reader yandex-rn)
    (max-zoom
-    :initform 23)))
+    :initform 23)
+   (version
+    :initform "2.2.3")))
     
 
 
@@ -122,6 +128,6 @@
 
 
 (defmethod format-url ((coord yandex-coords) tx ty zoom)
-  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=2.2.3&x=~d&y=~d&z=~d" tx ty (- (max-zoom coord) zoom)))
-
+  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=~s&x=~d&y=~d&z=~d" 
+          (version coords) tx ty (- (max-zoom coord) zoom)))
 
