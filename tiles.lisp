@@ -8,7 +8,7 @@
            :latlon2tile
            :format-url))
 
-(in-package :shmuma.mapper.coords)
+(in-package :shmuma.mapper.tiles)
 
 
 (defclass tile ()
@@ -19,26 +19,33 @@
    (tx
     :initarg :tx
     :initform nil
-    :accedssor tx)
+    :accessor tx)
    (ty
     :initarg :ty
     :initform nil
-    :accedssor ty)
+    :accessor ty)
    (zoom
     :initarg :zoom
     :initform nil
-    :accedssor zoom))
+    :accessor zoom)))
 
 
 (defgeneric valid-tilep (tile)
   (:documentation "Checks tile for validity"))
 
+(defgeneric tile-url (tile)
+  (:documentation "Returns url of tile"))
+
 (defmethod valid-tilep ((tile tile))
   (and (tx tile) (ty tile) (zoom tile)))
 
+(defmethod tile-url ((tile tile))
+  (if (valid-tilep tile)
+      (format-url (coords tile) tile)
+      (error 'tile-invalid-error)))
+
 (define-condition tile-invalid-error (error)
   ())
-
 
 
 (defclass tiles-coords ()
