@@ -32,7 +32,7 @@
    (data
     :initarg :data
     :initform nil
-    :reader data))
+    :reader data)))
 
 
 (defgeneric valid-tilep (tile)
