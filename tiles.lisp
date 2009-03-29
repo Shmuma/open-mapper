@@ -184,11 +184,7 @@
 
 (defmethod tiles-for-region ((coord tiles-coords) up-latlon dn-latlon zoom)
   (let* ((up (latlon2tile coord up-latlon zoom))
-         (dn (latlon2tile coord dn-latlon zoom))
-         (ux (min (tx up) (tx dn)))
-         (uy (min (ty up) (ty dn)))
-         (dx (max (tx up) (tx dn)))
-         (dy (max (ty up) (ty dn))))
-    (loop for ty from uy to dy
-         append (loop for tx from ux to dx
+         (dn (latlon2tile coord dn-latlon zoom)))
+    (loop for ty from (min (ty up) (ty dn)) to (max (ty up) (ty dn))
+         append (loop for tx from (min (tx up) (tx dn)) to (max (tx up) (tx dn))
                    collect (make-instance 'tile :coords coord :tx tx :ty ty :zoom zoom)))))
