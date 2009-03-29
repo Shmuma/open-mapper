@@ -28,17 +28,27 @@
    (zoom
     :initarg :zoom
     :initform nil
-    :accessor zoom)))
+    :accessor zoom)
+   (data
+    :initarg :data
+    :initform nil
+    :reader data))
 
 
 (defgeneric valid-tilep (tile)
   (:documentation "Checks tile for validity"))
+
+(defgeneric have-datap (tile)
+  (:documentation "Checks that tile has pixmap data"))
 
 (defgeneric tile-url (tile)
   (:documentation "Returns url of tile"))
 
 (defmethod valid-tilep ((tile tile))
   (and (tx tile) (ty tile) (zoom tile)))
+
+(defmethod have-datap ((tile tile))
+  (if (data tile) t nil))
 
 (defmethod tile-url ((tile tile))
   (if (valid-tilep tile)
