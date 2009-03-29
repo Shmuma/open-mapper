@@ -1,12 +1,13 @@
 (defpackage :shmuma.mapper.tiles
   (:use :common-lisp)
-  (:export :tile :valid-tilep 
+  (:export :tile :valid-tilep :tx :ty :zoom :coords
            :tiles-coords
            :yandex-coords
            :latlon2units
            :units2tile
            :latlon2tile
-           :format-url))
+           :format-url
+           :tiles-for-region))
 
 (in-package :shmuma.mapper.tiles)
 
@@ -96,6 +97,8 @@
 (defgeneric format-url (coord tile)
   (:documentation "Return URL of tile for given coordinate system"))
 
+(defgeneric tiles-for-region (coord up-latlon dn-latlon zoom)
+  (:documentation "Return array of tiles objects for region"))
 
 
 (define-condition invalid-latlon-error (error)
@@ -124,13 +127,13 @@
         (let* ((pow (expt 2 (+ zoom (tile-size coord))))
                (tile (map 'list #'(lambda (n)
                                     (truncate (/ n pow))) units)))
-          (make-instance 'tile :coord coord :tx (car tile) :ty (cadr tile) :zoom zoom)))
+          (make-instance 'tile :coords coord :tx (car tile) :ty (cadr tile) :zoom zoom)))
     (show-error-message (err)
       (format t "Invalid units passed: ~a~%" (units err)))))
 
 
 (defmethod latlon2tile ((coord tiles-coords) latlon zoom)
-  (units2tiles coord (latlon2units coord latlon) zoom))
+  (units2tile coord (latlon2units coord latlon) zoom))
 
 
 (defun latlon2units-yandex (coord latlon)
@@ -169,13 +172,13 @@
           (version coord) (tx tile) (ty tile) (- (max-zoom coord) (zoom tile))))
 
 
-(defun tiles-for-region (coord up-latlon dn-latlon zoom)
-  (let* ((up (latlon2tiles (coords tiles) up-latlon zoom))
-         (dn (latlon2tiles (coords tiles) dn-latlon zoom))
-         (ll (list (min (car up) (car dn))
-                   (min (cadr up) (cadr dn))))
-         (rr (list (max (car up) (car dn))
-                   (max (cadr up) (cadr dn)))))
-    (loop for ty from (cadr ll) to (cadr rr)
-         append (loop for tx from (car ll) to (car rr)
-                   collect (format-url (coords tiles) tx ty zoom)))))
+(defmethod tiles-for-region ((coord tiles-coords) up-latlon dn-latlon zoom)
+  (let* ((up (latlon2tile coord up-latlon zoom))
+         (dn (latlon2tile coord dn-latlon zoom))
+         (ux (min (tx up) (tx dn)))
+         (uy (min (ty up) (ty dn)))
+         (dx (max (tx up) (tx dn)))
+         (dy (max (ty up) (ty dn))))
+    (loop for ty from uy to dy
+         append (loop for tx from ux to dx
+                   collect (make-instance 'tile :coords coord :tx tx :ty ty :zoom zoom)))))

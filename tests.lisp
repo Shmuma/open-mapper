@@ -20,18 +20,18 @@
         (format t "UX: ~d, UY: ~d~%~%" (car units) (cadr units))
         (loop for z from 4 to 20
              do (let ((tile (units2tile coord units z)))
-                  (format t "TX[~2d]: ~7d, TY[~2d]: ~7d~%" z (car tiles) z (cadr tiles)))))))
+                  (format t "T[~2d]: (~7d,~7d)~%" z (tx tile) (ty tile)))))))
 
 
 (defun test-coords ()
   (let ((latlon '(55.80744 37.56762))
         (coord (make-instance 'yandex-coords)))
-    (convert latlon coord)
-    (latlon2tile coord latlon 8)))
+    (convert latlon coord)))
 
 
 (defun test-tiles ()
-  (tiles-for-region (make-instance 'tiles :coords (make-instance 'yandex-coords))
-                    '(55.80744d0 37.56762d0)
-                    '(55.90744d0 37.66762d0)
-                    8))
+  (let ((coord (make-instance 'yandex-coords)))
+    (map 'list 
+         #'(lambda (tile)
+             (format-url coord tile))
+         (tiles-for-region coord '(55.80744d0 37.56762d0) '(55.90744d0 37.66762d0) 8))))
