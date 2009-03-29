@@ -1,5 +1,5 @@
 (defpackage :shmuma.mapper.tests
-  (:use :common-lisp :shmuma.mapper.coords :shmuma.mapper.tiles)
+  (:use :common-lisp :shmuma.mapper.tiles)
   (:export :test-coords
            :test-tiles))
 
@@ -19,7 +19,7 @@
         (format t "Lat: ~5$, Lon: ~5$~%" (car latlon) (cadr latlon))
         (format t "UX: ~d, UY: ~d~%~%" (car units) (cadr units))
         (loop for z from 4 to 20
-             do (let ((tiles (units2tiles coord units z)))
+             do (let ((tile (units2tile coord units z)))
                   (format t "TX[~2d]: ~7d, TY[~2d]: ~7d~%" z (car tiles) z (cadr tiles)))))))
 
 
@@ -27,7 +27,7 @@
   (let ((latlon '(55.80744 37.56762))
         (coord (make-instance 'yandex-coords)))
     (convert latlon coord)
-    (latlon2tiles coord latlon 8)))
+    (latlon2tile coord latlon 8)))
 
 
 (defun test-tiles ()
