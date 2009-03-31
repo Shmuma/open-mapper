@@ -8,5 +8,6 @@
     :description "Open Mapper"
     :serial t
     :components ((:file "tiles")
+                 (:file "sqlite-fake")
                  (:file "storage")
-                 (:file "tests")))    
+                 (:file "tests")))
