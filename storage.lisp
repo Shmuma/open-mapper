@@ -12,5 +12,5 @@
 (defgeneric store-tile (storage tile)
   (:documentation "Stores given tile object into storage"))
 
-(defmethod store-tile ((storage sqlite-storage) (tile (tile)))
-  nil)
+;; (defmethod store-tile ((storage sqlite-storage) (tile (tile)))
+;;   nil)

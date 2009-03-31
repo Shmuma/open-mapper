@@ -5,9 +5,8 @@
 
 (defsystem open-mapper
     :name "open-mapper"
-    :descrioption "Open Mapper"
-    :depends-on
-    (:tiles
-     :storage
-     :tests))
-    
+    :description "Open Mapper"
+    :serial t
+    :components ((:file "tiles")
+                 (:file "storage")
+                 (:file "tests")))    
