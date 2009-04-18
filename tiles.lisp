@@ -38,11 +38,11 @@
 (defgeneric tile-url (tile)
   (:documentation "Returns url of tile"))
 
-(defun valid-tilep ((tile tile))
+(defun valid-tilep (tile)
   :documentation "Checks tile for validity"
   (and (tx tile) (ty tile) (zoom tile)))
 
-(defun have-datap ((tile tile))
+(defun have-datap (tile)
   :documentation "Checks that tile has pixmap data"
   (if (data tile) t nil))
 
@@ -55,7 +55,7 @@
   ())
 
 
-(defclass tiles-coords ()
+(defclass coord-system ()
   ((world-size
     :initarg :world-size
     :reader world-size)
@@ -72,7 +72,7 @@
     :reader version)))
 
 
-(defclass yandex-coords (tiles-coords)
+(defclass coord-system-yandex (coord-system)
   ((yandex-a
     :initform 20037508.342789d0
     :reader yandex-a)
@@ -91,20 +91,14 @@
     :initform "2.2.3")))
     
 
-(defgeneric latlon2units (coord latlon)
+(defgeneric latlon->units (coord latlon)
   (:documentation "Convert lat-lon pair to coordinate system's coords pair"))
 
-(defgeneric units2tile (coord units zoom)
+(defgeneric units->tile (coord units zoom)
   (:documentation "Convert units pair to tile object"))
 
-(defgeneric latlon2tile (coord units zoom)
-  (:documentation "Convert lat-lon pair to tile object"))
-
-(defgeneric format-url (coord tile)
-  (:documentation "Return URL of tile for given coordinate system"))
-
-(defgeneric tiles-for-region (coord up-latlon dn-latlon zoom)
-  (:documentation "Return array of tiles objects for region"))
+(defgeneric format-url (coord tile layer)
+  (:documentation "Return URL of tile for given coordinate system and layer kind"))
 
 
 (define-condition invalid-latlon-error (error)
@@ -112,6 +106,9 @@
 
 (define-condition invalid-units-error (error)
   ((units :initarg :units :reader units)))
+
+(define-condition bad-layer-error (error)
+  ((units :initarg :layer :reader layer)))
 
 
 (defun deg2rad (val)
@@ -124,7 +121,7 @@
   (* val (/ 180 pi)))
 
 
-(defmethod units2tile ((coord tiles-coords) units zoom)
+(defmethod units->tile ((coord coord-system-yandex) units zoom)
   (restart-case
       (progn
         (unless (and (listp units)
@@ -138,11 +135,7 @@
       (format t "Invalid units passed: ~a~%" (units err)))))
 
 
-(defmethod latlon2tile ((coord tiles-coords) latlon zoom)
-  (units2tile coord (latlon2units coord latlon) zoom))
-
-
-(defun latlon2units-yandex (coord latlon)
+(defun latlon->units-yandex (coord latlon)
   (let* ((lat (car latlon))
          (lon (cadr latlon))
          (pi4 (/ pi 4))
@@ -162,25 +155,34 @@
                   (log (/ tmp pow_tmp)))))))
 
 
-(defmethod latlon2units ((coord yandex-coords) latlon)
+(defmethod latlon->units ((coord coord-system-yandex) latlon)
   (restart-case 
       (progn
         (unless (and (listp latlon)
                      (= 2 (length latlon)))
           (error 'invalid-latlon-error :latlon latlon))
-        (latlon2units-yandex coord latlon))
+        (latlon->units-yandex coord latlon))
       (show-error-message (err) 
         (format t "Invalid latlon passed: ~a~%" (latlon err)))))
 
 
-(defmethod format-url ((coord yandex-coords) (tile tile))
-  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=~a&x=~d&y=~d&z=~d" 
-          (version coord) (tx tile) (ty tile) (- (max-zoom coord) (zoom tile))))
+(defun latlon->tile (coord latlon zoom)
+  (units->tile coord (latlon->units coord latlon) zoom))
 
 
-(defmethod tiles-for-region ((coord tiles-coords) up-latlon dn-latlon zoom)
-  (let* ((up (latlon2tile coord up-latlon zoom))
-         (dn (latlon2tile coord dn-latlon zoom)))
-    (loop for ty from (min (ty up) (ty dn)) to (max (ty up) (ty dn))
-         append (loop for tx from (min (tx up) (tx dn)) to (max (tx up) (tx dn))
-                   collect (make-instance 'tile :coords coord :tx tx :ty ty :zoom zoom)))))
+
+
+(defmethod format-url ((coord yandex-coords) (tile tile) layer)
+     (format nil 
+             (ecase (layer) 
+               (vector "http://vec.maps.yandex.net/tiles?l=map&v=~a&x=~d&y=~d&z=~d")
+               (nil (error bad-layer-error :layer layer)))
+             (version coord) (tx tile) (ty tile) (- (max-zoom coord) (zoom tile))))
+
+
+;; (defmethod tiles-for-region ((coord tiles-coords) up-latlon dn-latlon zoom)
+;;   (let* ((up (latlon2tile coord up-latlon zoom))
+;;          (dn (latlon2tile coord dn-latlon zoom)))
+;;     (loop for ty from (min (ty up) (ty dn)) to (max (ty up) (ty dn))
+;;          append (loop for tx from (min (tx up) (tx dn)) to (max (tx up) (tx dn))
+;;                    collect (make-instance 'tile :coords coord :tx tx :ty ty :zoom zoom)))))
