@@ -35,19 +35,15 @@
     :reader data)))
 
 
-(defgeneric valid-tilep (tile)
-  (:documentation "Checks tile for validity"))
-
-(defgeneric have-datap (tile)
-  (:documentation "Checks that tile has pixmap data"))
-
 (defgeneric tile-url (tile)
   (:documentation "Returns url of tile"))
 
-(defmethod valid-tilep ((tile tile))
+(defun valid-tilep ((tile tile))
+  :documentation "Checks tile for validity"
   (and (tx tile) (ty tile) (zoom tile)))
 
-(defmethod have-datap ((tile tile))
+(defun have-datap ((tile tile))
+  :documentation "Checks that tile has pixmap data"
   (if (data tile) t nil))
 
 (defmethod tile-url ((tile tile))

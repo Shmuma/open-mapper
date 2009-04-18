@@ -1,22 +1,16 @@
 (defpackage :shmuma.mapper.storage
   (:use :common-lisp 
-        :shmuma.mapper.tiles
-        #+ffi :sqlite
-        #-ffi :sqlite-fake))
+        :shmuma.mapper.tiles))
 
 (in-package :shmuma.mapper.storage)
 
 
-(defclass storage ()
-  nil)
+(defclass sqlite-storage ()
+  ((name :initarg :name
+         :initform (error "You must provide file name")
+         :reader name)))
 
 
-(defgeneric store-tile (storage tile)
-  (:documentation "Stores given tile object into storage"))
-
-(defmethod store-tile ((storage storage) (tile tile))
-  (sqlite-open "tiles.db"))
-
-
-(defun test ()
-  (sqlite-open "test.db"))
+(defmethod initialize-instance :after ((db sqlite-storage) &key)
+  :documentation "sqlite-storage constructor. Creates DB object"
+  (format t "Init SQLite DB ~a~%" (name db)))
