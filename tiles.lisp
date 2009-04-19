@@ -35,8 +35,8 @@
     :reader data)))
 
 
-(defgeneric tile-url (tile)
-  (:documentation "Returns url of tile"))
+(defgeneric tile-url (tile layer)
+  (:documentation "Returns url of tile with specified layer"))
 
 (defun valid-tilep (tile)
   :documentation "Checks tile for validity"
@@ -46,9 +46,9 @@
   :documentation "Checks that tile has pixmap data"
   (if (data tile) t nil))
 
-(defmethod tile-url ((tile tile))
+(defmethod tile-url ((tile tile) layer)
   (if (valid-tilep tile)
-      (format-url (coords tile) tile)
+      (format-url (coords tile) tile layer)
       (error 'tile-invalid-error)))
 
 (define-condition tile-invalid-error (error)
