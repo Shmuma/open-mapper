@@ -1,94 +1,82 @@
 (defpackage :shmuma.mapper.tiles
   (:use :common-lisp)
-  (:export :tile :valid-tilep :tx :ty :zoom :coords
-           :tiles-coords
-           :yandex-coords
-           :latlon2units
-           :units2tile
-           :latlon2tile
-           :format-url
-           :tiles-for-region))
+  (:export :tile
+           :coord-system-yandex
+           :coord-system-layers
+           :latlon->units
+           :units->tile
+           :latlon->tile
+           :tile->url)
+)
 
 (in-package :shmuma.mapper.tiles)
 
 
+
 (defclass tile ()
-  ((coords
-    :initarg :coords
+  ((coord-system
+    :initarg :coord-system
     :initform (error "You must provide coordinate system")
-    :reader coords)
+    :reader coord-system
+    :documentation "Coordinate system this tile belongs")
    (tx
     :initarg :tx
     :initform nil
-    :accessor tx)
+    :accessor tx
+    :documentation "Tile X coordinate")
    (ty
     :initarg :ty
     :initform nil
-    :accessor ty)
+    :accessor ty
+    :documentation "Tile Y coordinate")
    (zoom
     :initarg :zoom
     :initform nil
-    :accessor zoom)
-   (data
-    :initarg :data
-    :initform nil
-    :reader data)))
-
-
-(defgeneric tile-url (tile layer)
-  (:documentation "Returns url of tile with specified layer"))
-
-(defun valid-tilep (tile)
-  :documentation "Checks tile for validity"
-  (and (tx tile) (ty tile) (zoom tile)))
-
-(defun have-datap (tile)
-  :documentation "Checks that tile has pixmap data"
-  (if (data tile) t nil))
-
-(defmethod tile-url ((tile tile) layer)
-  (if (valid-tilep tile)
-      (format-url (coords tile) tile layer)
-      (error 'tile-invalid-error)))
-
-(define-condition tile-invalid-error (error)
-  ())
+    :accessor zoom
+    :documentation "Tile zoom level"))
+  (:documentation "Single tile with X, Y and Z in given coordinate system."))
 
 
 (defclass coord-system ()
   ((world-size
     :initarg :world-size
-    :reader world-size)
+    :reader world-size
+    :allocation :class)
    (tile-size
     :initform 8
-    :reader tile-size)
+    :reader tile-size
+    :allocation :class)
    (max-zoom
     :initarg :max-zoom
-    :initform (error "You must provide max-zoom")
-    :reader max-zoom)
-   (version
-    :initarg :version
-    :initform nil
-    :reader version)))
+    :reader max-zoom
+    :allocation :class)))
+
+
+(defgeneric coord-system-layers (coord)
+  (:documentation "Get list of known layers of given coordinate system"))
 
 
 (defclass coord-system-yandex (coord-system)
   ((yandex-a
     :initform 20037508.342789d0
-    :reader yandex-a)
+    :reader yandex-a
+    :allocation :class)
    (yandex-e
     :initform 0.0818191908426d0
-    :reader yandex-e)
+    :reader yandex-e
+    :allocation :class)
    (yandex-f
     :initform 53.5865938d0
-    :reader yandex-f)
+    :reader yandex-f
+    :allocation :class)
    (yandex-rn
     :initform 6378137.0d0
-    :reader yandex-rn)
+    :reader yandex-rn
+    :allocation :class)
+   (world-size
+    :initform #x7FFFFFFF)
    (max-zoom
-    :initform 23)
-   (version
-    :initform "2.2.3")))
+    :initform 23)))
     
 
 (defgeneric latlon->units (coord latlon)
@@ -97,8 +85,11 @@
 (defgeneric units->tile (coord units zoom)
   (:documentation "Convert units pair to tile object"))
 
-(defgeneric format-url (coord tile layer)
+(defgeneric tile->url (coord layer tile)
   (:documentation "Return URL of tile for given coordinate system and layer kind"))
+
+(defgeneric layer-version (coord layer)
+  (:documentation "Return string with latest known version of this layer"))
 
 
 (define-condition invalid-latlon-error (error)
@@ -108,7 +99,7 @@
   ((units :initarg :units :reader units)))
 
 (define-condition bad-layer-error (error)
-  ((units :initarg :layer :reader layer)))
+  ((layer :initarg :layer :reader layer)))
 
 
 (defun deg2rad (val)
@@ -121,6 +112,10 @@
   (* val (/ 180 pi)))
 
 
+(defmethod coord-system-layers ((coord coord-system-yandex))
+  '(vector satellite traffic hybrid))
+
+
 (defmethod units->tile ((coord coord-system-yandex) units zoom)
   (restart-case
       (progn
@@ -130,7 +125,7 @@
         (let* ((pow (expt 2 (+ zoom (tile-size coord))))
                (tile (map 'list #'(lambda (n)
                                     (truncate (/ n pow))) units)))
-          (make-instance 'tile :coords coord :tx (car tile) :ty (cadr tile) :zoom zoom)))
+          (make-instance 'tile :coord-system coord :tx (car tile) :ty (cadr tile) :zoom zoom)))
     (show-error-message (err)
       (format t "Invalid units passed: ~a~%" (units err)))))
 
@@ -170,19 +165,48 @@
   (units->tile coord (latlon->units coord latlon) zoom))
 
 
+;; layer versions
+(defmethod layer-version ((coord coord-system-yandex) (layer (eql 'vector)))
+  "2.4.2")
+
+(defmethod layer-version ((coord coord-system-yandex) (layer (eql 'satellite)))
+  "1.8.0")
+
+(defmethod layer-version ((coord coord-system-yandex) (layer (eql 'hybrid)))
+  "2.4.2")
 
 
-(defmethod format-url ((coord yandex-coords) (tile tile) layer)
-     (format nil 
-             (ecase (layer) 
-               (vector "http://vec.maps.yandex.net/tiles?l=map&v=~a&x=~d&y=~d&z=~d")
-               (nil (error bad-layer-error :layer layer)))
-             (version coord) (tx tile) (ty tile) (- (max-zoom coord) (zoom tile))))
+;; url formatting methods for yandex
+(defmethod tile->url ((coord coord-system-yandex) (layer (eql 'vector)) (tile tile))
+  (format nil "http://vec.maps.yandex.net/tiles?l=map&v=~a&x=~d&y=~d&z=~d"
+          (layer-version coord layer)
+          (tx tile)
+          (ty tile)
+          (- (max-zoom coord) (zoom tile))))
 
 
-;; (defmethod tiles-for-region ((coord tiles-coords) up-latlon dn-latlon zoom)
-;;   (let* ((up (latlon2tile coord up-latlon zoom))
-;;          (dn (latlon2tile coord dn-latlon zoom)))
-;;     (loop for ty from (min (ty up) (ty dn)) to (max (ty up) (ty dn))
-;;          append (loop for tx from (min (tx up) (tx dn)) to (max (tx up) (tx dn))
-;;                    collect (make-instance 'tile :coords coord :tx tx :ty ty :zoom zoom)))))
+(defmethod tile->url ((coord coord-system-yandex) (layer (eql 'satellite)) (tile tile))
+  (format nil "http://sat.maps.yandex.net/tiles?l=sat&v=~a&x=~d&y=~d&z=~d"
+          (layer-version coord layer)
+          (tx tile)
+          (ty tile)
+          (- (max-zoom coord) (zoom tile))))
+
+
+(defmethod tile->url ((coord coord-system-yandex) (layer (eql 'hybrid)) (tile tile))
+  (format nil "http://vec.maps.yandex.net/tiles?l=skl&v=~a&x=~d&y=~d&z=~d"
+          (layer-version coord layer)
+          (tx tile)
+          (ty tile)
+          (- (max-zoom coord) (zoom tile))))
+
+
+;; nice utility methods
+(defmethod print-object ((tile tile) s)
+  (format s "#<~a X=~d Y=~d Z=~d>" (class-name (class-of tile))
+          (tx tile) (ty tile) (zoom tile)))
+
+
+(defmethod print-object ((cs coord-system-yandex) s)
+  (format s "#<~a layers: (~{~a~^, ~})>" (class-name (class-of cs))
+          (coord-system-layers cs)))
