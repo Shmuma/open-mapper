@@ -30,8 +30,8 @@
 
 
 (defun test-tiles ()
-  (let ((coord (make-instance 'coord-system-yandex)))
-    (map 'list 
-         #'(lambda (tile)
-             (format-url coord tile))
-         (tiles-for-region coord '(55.80744d0 37.56762d0) '(55.90744d0 37.66762d0) 8))))
+  (let ((coord (make-instance 'coord-system-yandex))
+        (urls nil))
+    (loop-tiles (coord '(55.80744d0 37.56762d0) '(55.90744d0 37.66762d0) 8 tile)
+       (push (tile->url coord 'vector tile) urls))
+    urls))
