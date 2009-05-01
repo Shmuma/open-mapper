@@ -1,16 +1,17 @@
 (defpackage :shmuma.mapper.tiles
   (:use :common-lisp)
-  (:export :tile
+  (:export :tile :tx :ty :zoom
+           :coord-system :min-zoom :max-zoom
            :coord-system-yandex
-           :coord-system-layers
+           :cs-layers
            :latlon->units
            :units->tile
            :latlon->tile
-           :tile->url)
+           :tile->url
+           :loop-tiles)
 )
 
 (in-package :shmuma.mapper.tiles)
-
 
 
 (defclass tile ()
@@ -46,13 +47,17 @@
     :initform 8
     :reader tile-size
     :allocation :class)
+   (min-zoom
+    :initarg :min-zoom
+    :reader min-zoom
+    :allocation :class)
    (max-zoom
     :initarg :max-zoom
     :reader max-zoom
     :allocation :class)))
 
 
-(defgeneric coord-system-layers (coord)
+(defgeneric cs-layers (coord)
   (:documentation "Get list of known layers of given coordinate system"))
 
 
@@ -75,6 +80,8 @@
     :allocation :class)
    (world-size
     :initform #x7FFFFFFF)
+   (min-zoom
+    :initform 4)
    (max-zoom
     :initform 23)))
     
@@ -112,7 +119,7 @@
   (* val (/ 180 pi)))
 
 
-(defmethod coord-system-layers ((coord coord-system-yandex))
+(defmethod cs-layers ((coord coord-system-yandex))
   '(vector satellite traffic hybrid))
 
 
@@ -209,4 +216,31 @@
 
 (defmethod print-object ((cs coord-system-yandex) s)
   (format s "#<~a layers: (~{~a~^, ~})>" (class-name (class-of cs))
-          (coord-system-layers cs)))
+          (cs-layers cs)))
+
+
+(defmacro loop-tiles ((coord from-latlon to-latlon zoom tile-var) body)
+  :documentation "Iterates over all tiles of specified region, zoom and coordinate system"
+  (let ((from (gensym))
+        (to (gensym))
+        (cs (gensym))
+        (min-tx (gensym))
+        (min-ty (gensym))
+        (max-tx (gensym))
+        (max-ty (gensym))
+        (x (gensym))
+        (y (gensym))
+        (z (gensym)))
+    `(let* ((,cs ,coord)
+            (,z ,zoom)
+            (,from (latlon->tile ,cs ,from-latlon ,z))
+            (,to (latlon->tile ,cs ,to-latlon ,z))
+            (,min-tx (min (tx ,from) (tx ,to)))
+            (,min-ty (min (ty ,from) (ty ,to)))
+            (,max-tx (max (tx ,from) (tx ,to)))
+            (,max-ty (max (ty ,from) (ty ,to))))
+       (loop for ,y from ,min-ty to ,max-ty
+            do (loop for ,x from ,min-tx to ,max-tx
+                    do (let ((,tile-var (make-instance 'tile :coord-system ,cs
+                                                       :tx ,x :ty ,y :zoom ,z)))
+                         ,body))))))

@@ -10,27 +10,27 @@
   (invoke-restart 'show-error-message err))
 
 
-(defun convert (latlon &optional (coord (make-instance 'yandex-coords)))
+(defun convert (latlon &optional (coord (make-instance 'coord-system-yandex)))
     (handler-bind ((invalid-latlon-error 
                     #'show-error-message)
                    (invalid-units-error
                     #'show-error-message))
-      (let* ((units (latlon2units coord latlon)))
+      (let* ((units (latlon->units coord latlon)))
         (format t "Lat: ~5$, Lon: ~5$~%" (car latlon) (cadr latlon))
         (format t "UX: ~d, UY: ~d~%~%" (car units) (cadr units))
-        (loop for z from 4 to 20
-             do (let ((tile (units2tile coord units z)))
+        (loop for z from (min-zoom coord) to (max-zoom coord)
+             do (let ((tile (units->tile coord units z)))
                   (format t "T[~2d]: (~7d,~7d)~%" z (tx tile) (ty tile)))))))
 
 
 (defun test-coords ()
   (let ((latlon '(55.80744 37.56762))
-        (coord (make-instance 'yandex-coords)))
+        (coord (make-instance 'coord-system-yandex)))
     (convert latlon coord)))
 
 
 (defun test-tiles ()
-  (let ((coord (make-instance 'yandex-coords)))
+  (let ((coord (make-instance 'coord-system-yandex)))
     (map 'list 
          #'(lambda (tile)
              (format-url coord tile))

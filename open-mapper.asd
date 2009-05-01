@@ -8,6 +8,6 @@
     :description "Open Mapper"
     :serial t
     :components ((:file "tiles")
-                 (:file "storage")
-                 (:file "tests")
-                 (:system "clsql"))
+;;                 (:file "storage")
+                 (:file "tests"))
+)
