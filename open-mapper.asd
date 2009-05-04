@@ -8,6 +8,7 @@
     :description "Open Mapper"
     :serial t
     :components ((:file "tiles")
-;;                 (:file "storage")
+                 (:file "pixmap")
+                 (:file "storage")
                  (:file "tests"))
 )
