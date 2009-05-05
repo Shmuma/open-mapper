@@ -61,10 +61,10 @@ be used in given storage engine"))
 
 
 (defmethod tile-to-storage-ptr ((stg file-storage) (tile tile))
-  (make-instance 'storage-ptr-fname 
-                 :tile tile
-                 :fname (format nil "~s/~6,'0d-~6,'0d-~6,'0d" 
-                                (top-dir stg) (tx tile) (ty tile) (zoom tile))))
+  (let ((fname (format nil "~s/~6,'0d-~6,'0d-~6,'0d"
+                       (top-dir stg) (tx tile) (ty tile) (zoom tile))))
+    (make-instance 'storage-ptr-fname
+                   :tile tile :fname fname)))
 
 ;; HTTP storage engine
 ;; SQLite storage engine
