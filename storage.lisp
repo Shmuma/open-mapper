@@ -6,6 +6,17 @@
 (in-package :shmuma.mapper.storage)
 
 
+(defclass storage-ptr ()
+  ((tile
+    :initarg :tile
+    :reader tile)))
+
+(defclass storage-ptr-fname (storage-ptr)
+  ((fname
+    :initarg :fname
+    :reader fname)))
+
+
 (defclass storage ()
   nil)
 
@@ -17,34 +28,43 @@
    :reader top-dir)))
 
 
-(defgeneric tile-storage-address (storage tile)
-  (:documentation "Obtain tile's address understandable by storage engine."))
-
-(defgeneric put-pixmap (storage tile pixmap)
+(defgeneric put-pixmap (storage sorage-ptr pixmap)
   (:documentation "Put pixmap of given tile in storage."))
 
-(defgeneric get-pixmap (storage tile)
+(defgeneric get-pixmap (storage storage-ptr)
   (:documentation "Get pixmap of tile from storage or nil if not exists."))
 
+(defgeneric tile-to-storage-ptr (storage tile)
+  (:documentation 
+   "Constructs storage pointer of apropriate type to
+be used in given storage engine"))
 
 
 ;; File system storage engine
 (defun read-whole-file (f)
   (let ((data (make-array '(0) :element-type 'unsigned-byte :adjustable t :fill-pointer 0)))
     (loop for b = (read-byte f nil nil)
-       while b
+       until (null b)
        do (vector-push-extend b data))
     data))
 
 
-(defmethod get-pixmap ((stg file-storage) (tile tile))
-  (with-open-file (f (tile-storage-address stg tile) :direction :input :element-type 'unsigned-byte)
+(defmethod get-pixmap ((stg file-storage) (ptr storage-ptr-fname))
+  (with-open-file (f (fname ptr) :direction :input :element-type 'unsigned-byte)
     (make-pixmap (read-whole-file f))))
 
 
-(defmethod tile-storage-address ((stg file-storage) (tile tile))
-  (format nil "~s/~6,'0d-~6,'0d-~6,'0d" (top-dir stg) (tx tile) (ty tile) (zoom tile)))
+(defmethod put-pixmap ((stg file-storage) (ptr storage-ptr-fname) (pixmap pixmap))
+  (with-open-file (f (fname ptr) :direction :output :element-type 'unsigned-byte)
+    (loop for b across (data pixmap)
+       do (write-byte b f))))
 
+
+(defmethod tile-to-storage-ptr ((stg file-storage) (tile tile))
+  (make-instance 'storage-ptr-fname 
+                 :tile tile
+                 :fname (format nil "~s/~6,'0d-~6,'0d-~6,'0d" 
+                                (top-dir stg) (tx tile) (ty tile) (zoom tile))))
 
 ;; HTTP storage engine
 ;; SQLite storage engine

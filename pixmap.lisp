@@ -1,7 +1,8 @@
 (defpackage :shmuma.mapper.pixmap
   (:use :common-lisp)
   (:export :pixmap
-           :make-pixmap))
+           :make-pixmap
+           :data))
 
 
 (in-package :shmuma.mapper.pixmap)
