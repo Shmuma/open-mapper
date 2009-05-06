@@ -1,5 +1,6 @@
 (defpackage :shmuma.mapper.storage
   (:use :common-lisp 
+        :trivial-http
         :shmuma.mapper.tiles
         :shmuma.mapper.pixmap))
 
@@ -16,6 +17,11 @@
     :initarg :fname
     :reader fname)))
 
+(defclass storage-ptr-http (storage-ptr)
+  ((url
+    :initarg :url
+    :reader url)))
+
 
 (defclass storage ()
   nil)
@@ -26,6 +32,10 @@
    :initarg :top-dir
    :initform (error "You must provide :top-dir argument")
    :reader top-dir)))
+
+
+(defclass http-storage (storage)
+  nil)
 
 
 (defgeneric put-pixmap (storage sorage-ptr pixmap)
@@ -67,4 +77,17 @@ be used in given storage engine"))
                    :tile tile :fname fname)))
 
 ;; HTTP storage engine
+(defmethod get-pixmap ((stg http-storage) (ptr storage-ptr-http))
+  (destructuring-bind (code header stream) (http-get (url ptr))
+    (declare (ignore header))
+    (if (= 200 code)
+        (make-pixmap (read-whole-file stream))
+        nil)))
+
+
+(defmethod tile-to-storage-ptr ((stg http-storage) (tile tile))
+  (make-instance 'storage-ptr-http
+                 :tile tile :url (get-tile-url tile)))
+
+
 ;; SQLite storage engine

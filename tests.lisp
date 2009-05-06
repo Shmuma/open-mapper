@@ -1,5 +1,5 @@
 (defpackage :shmuma.mapper.tests
-  (:use :common-lisp :shmuma.mapper.tiles)
+  (:use :common-lisp :shmuma.mapper.tiles :shmuma.mapper.storage)
   (:export :test-coords
            :test-tiles))
 
@@ -10,7 +10,7 @@
   (invoke-restart 'show-error-message err))
 
 
-(defun convert (latlon &optional (coord (make-instance 'coord-system-yandex)))
+(defun convert (latlon &optional (coord (make-coord-yandex 'vector)))
     (handler-bind ((invalid-latlon-error 
                     #'show-error-message)
                    (invalid-units-error
@@ -30,8 +30,8 @@
 
 
 (defun test-tiles ()
-  (let ((coord (make-instance 'coord-system-yandex))
+  (let ((coord (make-coord-yandex 'vector))
         (urls nil))
     (loop-tiles (coord '(55.80744d0 37.56762d0) '(55.90744d0 37.66762d0) 8 tile)
-       (push (tile->url coord 'vector tile) urls))
+       (push (get-tile-url tile) urls))
     urls))

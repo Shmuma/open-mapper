@@ -11,4 +11,5 @@
                  (:file "pixmap")
                  (:file "storage")
                  (:file "tests"))
+    :depends-on (:trivial-http)
 )

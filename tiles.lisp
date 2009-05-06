@@ -1,13 +1,14 @@
 (defpackage :shmuma.mapper.tiles
   (:use :common-lisp)
   (:export :tile :tx :ty :zoom
-           :coord-system :min-zoom :max-zoom
+           :coord-system :min-zoom :max-zoom :layer
            :coord-system-yandex
+           :make-coord-yandex
            :cs-layers
            :latlon->units
            :units->tile
            :latlon->tile
-           :tile->url
+           :get-tile-url
            :loop-tiles)
 )
 
@@ -54,7 +55,13 @@
    (max-zoom
     :initarg :max-zoom
     :reader max-zoom
-    :allocation :class)))
+    :allocation :class)
+   (layer
+    :initarg :layer
+    :initform nil
+    :accessor layer
+    :documentation "Layer this coord system represents")))
+
 
 
 (defgeneric cs-layers (coord)
@@ -84,8 +91,17 @@
     :initform 4)
    (max-zoom
     :initform 23)))
+
+
+;; constructors
+(defun make-tile (cs x y z)
+  (make-instance 'tile :coord-system cs :tx x :ty y :zoom z))
+
+(defun make-coord-yandex (layer)
+  (make-instance 'coord-system-yandex :layer layer))
     
 
+;; generics
 (defgeneric latlon->units (coord latlon)
   (:documentation "Convert lat-lon pair to coordinate system's coords pair"))
 
@@ -132,7 +148,7 @@
         (let* ((pow (expt 2 (+ zoom (tile-size coord))))
                (tile (map 'list #'(lambda (n)
                                     (truncate (/ n pow))) units)))
-          (make-instance 'tile :coord-system coord :tx (car tile) :ty (cadr tile) :zoom zoom)))
+          (make-tile coord (car tile) (cadr tile) zoom)))
     (show-error-message (err)
       (format t "Invalid units passed: ~a~%" (units err)))))
 
@@ -241,6 +257,11 @@
             (,max-ty (max (ty ,from) (ty ,to))))
        (loop for ,y from ,min-ty to ,max-ty
             do (loop for ,x from ,min-tx to ,max-tx
-                    do (let ((,tile-var (make-instance 'tile :coord-system ,cs
-                                                       :tx ,x :ty ,y :zoom ,z)))
+                    do (let ((,tile-var (make-tile ,cs ,x ,y ,z)))
                          ,body))))))
+
+
+(defun get-tile-url (tile)
+  (let* ((coord (coord-system tile))
+         (layer (layer coord)))
+    (tile->url coord layer tile)))
