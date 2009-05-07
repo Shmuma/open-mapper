@@ -10,6 +10,7 @@
     :components ((:file "tiles")
                  (:file "pixmap")
                  (:file "storage")
-                 (:file "tests"))
+                 (:file "tests")
+                 (:file "main"))
     :depends-on (:trivial-http)
 )
