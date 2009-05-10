@@ -2,7 +2,16 @@
   (:use :common-lisp 
         :trivial-http
         :shmuma.mapper.tiles
-        :shmuma.mapper.pixmap))
+        :shmuma.mapper.pixmap)
+  (:export :storage
+           :file-storage
+           :http-storage
+           :put-pixmap
+           :get-pixmap
+           :tile-to-storage-ptr
+           :make-file-storage
+           :make-http-storage
+           :print-object))
 
 (in-package :shmuma.mapper.storage)
 
@@ -51,6 +60,10 @@ be used in given storage engine"))
 
 
 ;; File system storage engine
+(defun make-file-storage (topdir)
+  (make-instance 'file-storage :top-dir topdir))
+
+
 (defun read-whole-file (f)
   (let ((data (make-array '(0) :element-type 'unsigned-byte :adjustable t :fill-pointer 0)))
     (loop for b = (read-byte f nil nil)
@@ -77,12 +90,19 @@ be used in given storage engine"))
                    :tile tile :fname fname)))
 
 ;; HTTP storage engine
+(defun make-http-storage ()
+  (make-instance 'http-storage))
+
+
 (defmethod get-pixmap ((stg http-storage) (ptr storage-ptr-http))
   (destructuring-bind (code header stream) (http-get (url ptr))
     (declare (ignore header))
-    (if (= 200 code)
-        (make-pixmap (read-whole-file stream))
-        nil)))
+    (let ((res 
+           (if (= 200 code)
+               (make-pixmap (read-whole-file stream))
+               nil)))
+      (close stream)
+      res)))
 
 
 (defmethod tile-to-storage-ptr ((stg http-storage) (tile tile))
@@ -91,3 +111,8 @@ be used in given storage engine"))
 
 
 ;; SQLite storage engine
+
+
+;; utility routines
+(defmethod print-object (stm (ptr storage-ptr-http))
+  (format stm "#<storage-ptr-http url: ~s>~%" (url ptr)))
