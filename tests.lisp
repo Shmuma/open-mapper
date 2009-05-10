@@ -35,3 +35,13 @@
     (loop-tiles (coord '(55.80744d0 37.56762d0) '(55.90744d0 37.66762d0) 8 tile)
        (push (get-tile-url tile) urls))
     urls))
+
+
+;; download kremlin tile in all available zooms
+(defun test-http-storage ()
+  (let* ((cs (make-coord-yandex 'vector))
+         (kremlin-ll '(55.752425 37.618731))
+         (units (latlon->units cs kremlin-ll)))
+    (loop for z from (min-zoom cs) to (max-zoom coord)
+         do (let ((tile (units->tile cs units z)))
+              (format t "T[~2d]: (~7d,~7d)~%" z (tx tile) (ty tile))))))
