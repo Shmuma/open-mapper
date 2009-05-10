@@ -66,7 +66,7 @@ be used in given storage engine"))
 
 (defun read-whole-file (f)
   (let ((data (make-array '(0) :element-type 'unsigned-byte :adjustable t :fill-pointer 0)))
-    (loop for b = (read-byte f nil nil)
+    (loop for b = (read-char f nil nil)
        until (null b)
        do (vector-push-extend b data))
     data))
@@ -80,11 +80,11 @@ be used in given storage engine"))
 (defmethod put-pixmap ((stg file-storage) (ptr storage-ptr-fname) (pixmap pixmap))
   (with-open-file (f (fname ptr) :direction :output :element-type 'unsigned-byte)
     (loop for b across (data pixmap)
-       do (write-byte b f))))
+       do (write-char b f))))
 
 
 (defmethod tile-to-storage-ptr ((stg file-storage) (tile tile))
-  (let ((fname (format nil "~s/~6,'0d-~6,'0d-~6,'0d"
+  (let ((fname (format nil "~a/~6,'0d-~6,'0d-~6,'0d.png"
                        (top-dir stg) (tx tile) (ty tile) (zoom tile))))
     (make-instance 'storage-ptr-fname
                    :tile tile :fname fname)))

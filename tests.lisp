@@ -38,7 +38,7 @@
 
 
 ;; download kremlin tile in all available zooms
-(defun test-http-storage (&optional (dest-dir "/tmp"))
+(defun test-http-storage (&optional (dest-dir "/tmp/dest/"))
   (let* ((cs (make-coord-yandex 'vector))
          (kremlin-ll '(55.752425 37.618731))
          (units (latlon->units cs kremlin-ll))
@@ -48,8 +48,6 @@
          do (let* ((tile (units->tile cs units z))
                    (src-ptr (tile-to-storage-ptr src-stg tile))
                    (dst-ptr (tile-to-storage-ptr dst-stg tile)))
-;              (print-object t src-ptr)
-;              (format t "~a -> ~a~%" src-ptr dst-ptr)))))
               (let ((pixmap (get-pixmap src-stg src-ptr)))
                 (unless (null pixmap)
                   (put-pixmap dst-stg dst-ptr pixmap)))))))
