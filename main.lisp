@@ -7,9 +7,26 @@
 (in-package :shmuma.mapper.main)
 
 
-(defun main ()
-  (show-usage)
+(defun args ()
+  #+clisp ext:*args*
 )
+
+
+;; Parse given arguments. Return plist with result or nil if parse failed.
+(defun parse-args (args)
+  nil)
+  
+
+
+(defun main ()
+  (let ((cmd (parse-args (args))))
+    (if (null cmd)
+        (show-usage)
+        (do-work cmd))))
+
+
+(defun do-work (cmd)
+  nil)
 
 
 (defmacro strcat (&rest args)
