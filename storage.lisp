@@ -1,6 +1,6 @@
 (defpackage :shmuma.mapper.storage
   (:use :common-lisp 
-        :trivial-http
+        :drakma
         :shmuma.mapper.tiles
         :shmuma.mapper.pixmap)
   (:export :storage
@@ -64,14 +64,6 @@ be used in given storage engine"))
   (make-instance 'file-storage :top-dir topdir))
 
 
-(defun read-whole-file (f)
-  (let ((data (make-array '(0) :element-type 'unsigned-byte :adjustable t :fill-pointer 0)))
-    (loop for b = (read-char f nil nil)
-       until (null b)
-       do (vector-push-extend b data))
-    data))
-
-
 (defmethod get-pixmap ((stg file-storage) (ptr storage-ptr-fname))
   (with-open-file (f (fname ptr) :direction :input :element-type 'unsigned-byte)
     (make-pixmap (read-whole-file f))))
@@ -81,6 +73,15 @@ be used in given storage engine"))
   (with-open-file (f (fname ptr) :direction :output :element-type 'unsigned-byte)
     (loop for b across (data pixmap)
        do (write-char b f))))
+
+
+(defun read-whole-file (f)
+  (let ((data (make-array '(0) :element-type 'unsigned-byte 
+                               :adjustable t :fill-pointer 0)))
+    (loop for b = (read-char f nil nil)
+       until (null b)
+       do (vector-push-extend b data))
+    data))
 
 
 (defmethod tile-to-storage-ptr ((stg file-storage) (tile tile))
@@ -95,14 +96,12 @@ be used in given storage engine"))
 
 
 (defmethod get-pixmap ((stg http-storage) (ptr storage-ptr-http))
-  (destructuring-bind (code header stream) (http-get (url ptr))
-    (declare (ignore header))
-    (let ((res 
-           (if (= 200 code)
-               (make-pixmap (read-whole-file stream))
-               nil)))
-      (close stream)
-      res)))
+  (multiple-value-bind (data code) (http-request (url ptr))
+    (if (and (= code 200) 
+             (arrayp data)
+             (eq (array-element-type data) '(unsigned-byte 8)))
+        (make-pixmap data)
+        nil)))
 
 
 (defmethod tile-to-storage-ptr ((stg http-storage) (tile tile))

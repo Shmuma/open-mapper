@@ -12,5 +12,5 @@
                  (:file "storage")
                  (:file "tests")
                  (:file "main"))
-    :depends-on (:trivial-http)
+    :depends-on (:drakma)
 )
